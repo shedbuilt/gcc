@@ -12,6 +12,19 @@ case "$SHED_HWCONFIG" in
         ;;
 esac
 if [ "$SHED_BUILDMODE" == 'toolchain' ]; then
+    # Build the required GMP, MPFR and MPC packages
+    # HACK: Until shedmake supports multiple source files, this will
+    #       have to be done at build time.
+    ( wget http://www.mpfr.org/mpfr-3.1.6/mpfr-3.1.6.tar.xz && \
+      tar -xf mpfr-3.1.6.tar.xz && \
+      mv -v mpfr-3.1.6 mpfr ) || return 1
+    ( wget http://ftp.gnu.org/gnu/gmp/gmp-6.1.2.tar.xz && \
+      tar -xf gmp-6.1.2.tar.xz && \
+      mv -v gmp-6.1.2 gmp ) || return 1
+    ( wget http://www.multiprecision.org/mpc/download/mpc-1.0.3.tar.gz && \
+      tar -xf mpc-1.0.3.tar.gz && \
+      mv -v mpc-1.0.3 mpc ) || return 1
+    
     if [ -e /tools/usr/bin/${SHED_TARGET}-gcc ]; then
         cat gcc/limitx.h gcc/glimits.h gcc/limity.h > \
         `dirname $(${SHED_TARGET}-gcc -print-libgcc-file-name)`/include-fixed/limits.h
