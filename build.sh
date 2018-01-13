@@ -92,7 +92,7 @@ case "$SHED_BUILDMODE" in
             # Remove symlink created earlier in bootstrap
             rm -vf /usr/lib/gcc
         fi
-        ;;
+        ;&
     *)
         SED=sed                               \
         ../configure --prefix=/usr            \
@@ -103,7 +103,7 @@ case "$SHED_BUILDMODE" in
         ;;
 esac
 make -j 1 || return 1
-make DESTDIR=${SHED_FAKEROOT} install || return 1
+make DESTDIR="$SHED_FAKEROOT" install || return 1
 
 case "$SHED_BUILDMODE" in
     toolchain)
