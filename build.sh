@@ -21,7 +21,7 @@ if [ "$SHED_BUILDMODE" == 'toolchain' ]; then
     ( wget http://ftp.gnu.org/gnu/gmp/gmp-6.1.2.tar.xz && \
       tar -xf gmp-6.1.2.tar.xz && \
       mv -v gmp-6.1.2 gmp ) || return 1
-    ( wget http://www.multiprecision.org/mpc/download/mpc-1.0.3.tar.gz && \
+    ( wget https://ftp.gnu.org/gnu/mpc/mpc-1.0.3.tar.gz && \
       tar -xf mpc-1.0.3.tar.gz && \
       mv -v mpc-1.0.3 mpc ) || return 1
     
@@ -81,6 +81,16 @@ case "$SHED_BUILDMODE" in
                          --disable-libvtv                               \
                          --disable-libstdcxx                            \
                          --enable-languages=c,c++ || return 1
+        fi
+        ;;
+    bootstrap)
+        # HACK: This should really be in a preinstall script, but those can't
+        # be run before /usr/bin/env is present. Doing this prevents bootstrapping
+        # from binaries. We should fix this by re-instating the script, but suppressing
+        # if for the toolchain mode somehow.
+        if [ -L /usr/lib/gcc ]; then
+            # Remove symlink created earlier in bootstrap
+            rm -vf /usr/lib/gcc
         fi
         ;;
     *)

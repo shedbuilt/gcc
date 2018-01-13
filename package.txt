@@ -1,5 +1,5 @@
 NAME=gcc
 VERSION=7.2.0
-REVISION=3
+REVISION=4
 SRC=http://ftp.gnu.org/gnu/gcc/gcc-7.2.0/gcc-7.2.0.tar.xz
 SRCMD5=ff370482573133a7fcdd96cd2f552292
