@@ -4,7 +4,8 @@ case "$SHED_HWCONFIG" in
     orangepi-one)
         ;&
     orangepi-pc)
-        patch -Np1 -i $SHED_PATCHDIR/gcc-5.3.0-h3-cpu-default.patch
+        patch -Np1 -i "$SHED_PATCHDIR/gcc-5.3.0-h3-cpu-default.patch"
+        TOOLCHAIN_TARGET=armv7l-shedstrap-linux-gnueabihf
         ;;
     *)
         echo "Unsupported config: $SHED_HWCONFIG"
@@ -25,9 +26,9 @@ if [ "$SHED_BUILDMODE" == 'toolchain' ]; then
       tar -xf mpc-1.0.3.tar.gz && \
       mv -v mpc-1.0.3 mpc ) || return 1
     
-    if [ -e /tools/usr/bin/${SHED_TARGET}-gcc ]; then
+    if [ "$SHED_TARGET" != "$TOOLCHAIN_TARGET" ]; then
         cat gcc/limitx.h gcc/glimits.h gcc/limity.h > \
-        `dirname $(${SHED_TARGET}-gcc -print-libgcc-file-name)`/include-fixed/limits.h
+        `dirname $(${TOOLCHAIN_TARGET}-gcc -print-libgcc-file-name)`/include-fixed/limits.h
     fi
     for file in gcc/config/arm/linux-eabi.h
     do
@@ -46,11 +47,11 @@ mkdir -v build
 cd build
 case "$SHED_BUILDMODE" in
     toolchain)
-        if [ -e /tools/usr/bin/${SHED_TARGET}-gcc ]; then
-            CC=${SHED_TARGET}-gcc                                       \
-            CXX=${SHED_TARGET}-g++                                      \
-            AR=${SHED_TARGET}-ar                                        \
-            RANLIB=${SHED_TARGET}-ranlib                                \
+        if [ "$SHED_TARGET" != "$TOOLCHAIN_TARGET" ]; then
+            CC=${TOOLCHAIN_TARGET}-gcc                                       \
+            CXX=${TOOLCHAIN_TARGET}-g++                                      \
+            AR=${TOOLCHAIN_TARGET}-ar                                        \
+            RANLIB=${TOOLCHAIN_TARGET}-ranlib                                \
             ../configure --prefix=/tools                                \
                          --with-local-prefix=/tools                     \
                          --with-native-system-header-dir=/tools/include \
@@ -107,7 +108,7 @@ make DESTDIR="$SHED_FAKEROOT" install || return 1
 
 case "$SHED_BUILDMODE" in
     toolchain)
-        if [ -e /tools/usr/bin/${SHED_TARGET}-gcc ]; then
+        if [ "$SHED_TARGET" != "$TOOLCHAIN_TARGET" ]; then
             ln -sv gcc "${SHED_FAKEROOT}/tools/bin/cc"
         fi
         ;;
