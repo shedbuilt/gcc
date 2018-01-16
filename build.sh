@@ -1,30 +1,28 @@
 #!/bin/bash
 # Apply default architecture patch
 case "$SHED_HWCONFIG" in
-    orangepi-one)
-        ;&
-    orangepi-pc)
+    orangepi-one|orangepi-pc)
         patch -Np1 -i "$SHED_PATCHDIR/gcc-5.3.0-h3-cpu-default.patch"
         ;;
     *)
         echo "Unsupported config: $SHED_HWCONFIG"
-        return 1
+        exit 1
         ;;
 esac
 if [ "$SHED_BUILDMODE" == 'toolchain' ]; then
     # Build the required GMP, MPFR and MPC packages
     # HACK: Until shedmake supports multiple source files, this will
     #       have to be done at build time.
-    ( wget http://www.mpfr.org/mpfr-3.1.6/mpfr-3.1.6.tar.xz && \
+    { wget http://www.mpfr.org/mpfr-3.1.6/mpfr-3.1.6.tar.xz && \
       tar -xf mpfr-3.1.6.tar.xz && \
-      mv -v mpfr-3.1.6 mpfr ) || return 1
-    ( wget http://ftp.gnu.org/gnu/gmp/gmp-6.1.2.tar.xz && \
+      mv -v mpfr-3.1.6 mpfr; } || exit 1
+    { wget http://ftp.gnu.org/gnu/gmp/gmp-6.1.2.tar.xz && \
       tar -xf gmp-6.1.2.tar.xz && \
-      mv -v gmp-6.1.2 gmp ) || return 1
-    ( wget https://ftp.gnu.org/gnu/mpc/mpc-1.0.3.tar.gz && \
+      mv -v gmp-6.1.2 gmp; } || exit 1
+    { wget https://ftp.gnu.org/gnu/mpc/mpc-1.0.3.tar.gz && \
       tar -xf mpc-1.0.3.tar.gz && \
-      mv -v mpc-1.0.3 mpc ) || return 1
-    
+      mv -v mpc-1.0.3 mpc; } || exit 1
+
     if [ "$SHED_TARGET" != "$SHED_TOOLCHAIN_TARGET" ]; then
         cat gcc/limitx.h gcc/glimits.h gcc/limity.h > \
         `dirname $(${SHED_TOOLCHAIN_TARGET}-gcc -print-libgcc-file-name)`/include-fixed/limits.h
@@ -58,10 +56,10 @@ case "$SHED_BUILDMODE" in
                          --disable-libstdcxx-pch                        \
                          --disable-multilib                             \
                          --disable-bootstrap                            \
-                         --disable-libgomp || return 1
+                         --disable-libgomp || exit 1
         else
             ../configure --prefix=/tools                                \
-                         --target=$SHED_TARGET                          \
+                         --target=$SHED_TOOLCHAIN_TARGET                \
                          --with-glibc-version=2.11                      \
                          --with-sysroot="$SHED_INSTALLROOT"             \
                          --with-newlib                                  \
@@ -80,7 +78,7 @@ case "$SHED_BUILDMODE" in
                          --disable-libssp                               \
                          --disable-libvtv                               \
                          --disable-libstdcxx                            \
-                         --enable-languages=c,c++ || return 1
+                         --enable-languages=c,c++ || exit 1
         fi
         ;;
     bootstrap)
@@ -99,11 +97,12 @@ case "$SHED_BUILDMODE" in
                      --enable-languages=c,c++ \
                      --disable-multilib       \
                      --disable-bootstrap      \
-                     --with-system-zlib || return 1
+                     --with-system-zlib || exit 1
         ;;
 esac
-make -j 1 || return 1
-make DESTDIR="$SHED_FAKEROOT" install || return 1
+# GCC reportedly has issues with parallel make
+make -j 1 || exit 1
+make DESTDIR="$SHED_FAKEROOT" install || exit 1
 
 case "$SHED_BUILDMODE" in
     toolchain)
