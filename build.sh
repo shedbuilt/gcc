@@ -99,7 +99,7 @@ make DESTDIR="$SHED_FAKEROOT" install || exit 1
 
 case "$SHED_BUILDMODE" in
     toolchain)
-        if [ "$SHED_TARGET" != "$SHED_TOOLCHAIN_TARGET" ]; then
+        if [ "$SHED_HOST" == 'toolchain' ] && [ "$SHED_TARGET" == 'native' ]; then
             ln -sv gcc "${SHED_FAKEROOT}/tools/bin/cc"
         fi
         ;;
