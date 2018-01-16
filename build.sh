@@ -57,7 +57,7 @@ case "$SHED_BUILDMODE" in
                          --disable-multilib                             \
                          --disable-bootstrap                            \
                          --disable-libgomp || exit 1
-        elif [ "$SHED_TARGET" == 'toolchain' ]
+        elif [ "$SHED_TARGET" == 'toolchain' ]; then
             ../configure --prefix=/tools                                \
                          --target=$SHED_TOOLCHAIN_TARGET                \
                          --with-glibc-version=2.11                      \
