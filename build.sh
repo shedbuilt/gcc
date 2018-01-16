@@ -23,7 +23,7 @@ if [ "$SHED_BUILDMODE" == 'toolchain' ]; then
       tar -xf mpc-1.0.3.tar.gz && \
       mv -v mpc-1.0.3 mpc; } || exit 1
 
-    if [ "$SHED_TARGET" != "$SHED_TOOLCHAIN_TARGET" ]; then
+    if [ "$SHED_HOST" == 'toolchain' ] && [ "$SHED_TARGET" == 'native' ]; then
         cat gcc/limitx.h gcc/glimits.h gcc/limity.h > \
         `dirname $(${SHED_TOOLCHAIN_TARGET}-gcc -print-libgcc-file-name)`/include-fixed/limits.h
     fi
@@ -44,7 +44,7 @@ mkdir -v build
 cd build
 case "$SHED_BUILDMODE" in
     toolchain)
-        if [ "$SHED_TARGET" != "$SHED_TOOLCHAIN_TARGET" ]; then
+        if [ "$SHED_HOST" == 'toolchain' ] && [ "$SHED_TARGET" == 'native' ]; then
             CC=${SHED_TOOLCHAIN_TARGET}-gcc                                       \
             CXX=${SHED_TOOLCHAIN_TARGET}-g++                                      \
             AR=${SHED_TOOLCHAIN_TARGET}-ar                                        \
@@ -57,7 +57,7 @@ case "$SHED_BUILDMODE" in
                          --disable-multilib                             \
                          --disable-bootstrap                            \
                          --disable-libgomp || exit 1
-        else
+        elif [ "$SHED_TARGET" == 'toolchain' ]
             ../configure --prefix=/tools                                \
                          --target=$SHED_TOOLCHAIN_TARGET                \
                          --with-glibc-version=2.11                      \
@@ -79,18 +79,11 @@ case "$SHED_BUILDMODE" in
                          --disable-libvtv                               \
                          --disable-libstdcxx                            \
                          --enable-languages=c,c++ || exit 1
+        else
+            echo "Unsupported build options for toolchain."
+            exit 1
         fi
         ;;
-    bootstrap)
-        # HACK: This should really be in a preinstall script, but those can't
-        # be run before /usr/bin/env is present. Doing this prevents bootstrapping
-        # from binaries. We should fix this by re-instating the script, but suppressing
-        # if for the toolchain mode somehow.
-        if [ -L /usr/lib/gcc ]; then
-            # Remove symlink created earlier in bootstrap
-            rm -vf /usr/lib/gcc
-        fi
-        ;&
     *)
         SED=sed                               \
         ../configure --prefix=/usr            \
