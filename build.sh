@@ -16,9 +16,9 @@ if [ "$SHED_BUILDMODE" == 'toolchain' ]; then
     # Build the required GMP, MPFR and MPC packages
     # HACK: Until shedmake supports multiple source files, this will
     #       have to be done at build time.
-    { wget http://www.mpfr.org/mpfr-4.0.0/mpfr-4.0.0.tar.xz && \
-      tar -xf mpfr-4.0.0.tar.xz && \
-      mv -v mpfr-4.0.0 mpfr; } || exit 1
+    { wget http://www.mpfr.org/mpfr-3.1.6/mpfr-3.1.6.tar.xz && \
+      tar -xf mpfr-3.1.6.tar.xz && \
+      mv -v mpfr-3.1.6 mpfr; } || exit 1
     { wget http://ftp.gnu.org/gnu/gmp/gmp-6.1.2.tar.xz && \
       tar -xf gmp-6.1.2.tar.xz && \
       mv -v gmp-6.1.2 gmp; } || exit 1
@@ -96,8 +96,8 @@ case "$SHED_BUILDMODE" in
                      --with-system-zlib || exit 1
         ;;
 esac
-# GCC reportedly has issues with parallel make
-make -j 1 || exit 1
+
+make -j $SHED_NUMJOBS && \
 make DESTDIR="$SHED_FAKEROOT" install || exit 1
 
 case "$SHED_BUILDMODE" in
