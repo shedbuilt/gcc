@@ -3,9 +3,14 @@
 case "$SHED_HWCONFIG" in
     orangepi-one|orangepi-pc)
         patch -Np1 -i "$SHED_PATCHDIR/gcc-7.2.0-h3-cpu-default.patch"
+        SHEDPKG_GCC_CONFIG_HEADER='gcc/config/arm/linux-eabi.h'
+        # Prevent swapping on devices with < 2GB of RAM
+        SHEDPKG_NUMJOBS='1'
         ;;
     aml-s905x-cc)
         patch -Np1 -i "$SHED_PATCHDIR/gcc-7.2.0-s905x-cpu-default.patch"
+        SHEDPKG_GCC_CONFIG_HEADER='gcc/config/aarch64/aarch64-linux.h'
+        SHEDPKG_NUMJOBS="$SHED_NUMJOBS"
         ;;
     *)
         echo "Unsupported config: $SHED_HWCONFIG"
@@ -30,18 +35,13 @@ if [ "$SHED_BUILDMODE" == 'toolchain' ]; then
         cat gcc/limitx.h gcc/glimits.h gcc/limity.h > \
         `dirname $(${SHED_TOOLCHAIN_TARGET}-gcc -print-libgcc-file-name)`/include-fixed/limits.h
     fi
-    for file in gcc/config/arm/linux-eabi.h
-    do
-        cp -uv $file{,.orig}
-        sed -e 's@/lib\(64\)\?\(32\)\?/ld@/tools&@g' \
-            -e 's@/usr@/tools@g' $file.orig > $file
-        echo '
+    # Modify the config header to look for glibc in our toolchain folder
+    sed -i 's@/lib/ld@/tools&@g' "$SHEDPKG_GCC_CONFIG_HEADER"
+    echo '
 #undef STANDARD_STARTFILE_PREFIX_1
 #undef STANDARD_STARTFILE_PREFIX_2
 #define STANDARD_STARTFILE_PREFIX_1 "/tools/lib/"
-#define STANDARD_STARTFILE_PREFIX_2 ""' >> $file
-        touch $file.orig
-    done
+#define STANDARD_STARTFILE_PREFIX_2 ""' >> "$SHEDPKG_GCC_CONFIG_HEADER"
 fi
 mkdir -v build
 cd build
@@ -97,7 +97,7 @@ case "$SHED_BUILDMODE" in
         ;;
 esac
 
-make -j $SHED_NUMJOBS && \
+make -j $SHEDPKG_NUMJOBS && \
 make DESTDIR="$SHED_FAKEROOT" install || exit 1
 
 case "$SHED_BUILDMODE" in
@@ -111,7 +111,7 @@ case "$SHED_BUILDMODE" in
         ln -sv ../usr/bin/cpp "${SHED_FAKEROOT}/lib"
         ln -sv gcc "${SHED_FAKEROOT}/usr/bin/cc"
         install -v -dm755 "${SHED_FAKEROOT}/usr/lib/bfd-plugins"
-        ln -sfv ../../libexec/gcc/$(gcc -dumpmachine)/7.2.0/liblto_plugin.so "${SHED_FAKEROOT}/usr/lib/bfd-plugins/"
+        ln -sfv ../../libexec/gcc/${SHED_NATIVE_TARGET}/7.2.0/liblto_plugin.so "${SHED_FAKEROOT}/usr/lib/bfd-plugins/"
         mkdir -pv "${SHED_FAKEROOT}/usr/share/gdb/auto-load/usr/lib"
         mv -v "${SHED_FAKEROOT}/usr/lib"/*gdb.py "${SHED_FAKEROOT}/usr/share/gdb/auto-load/usr/lib"
         ;;
