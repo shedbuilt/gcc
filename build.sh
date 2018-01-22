@@ -2,7 +2,10 @@
 # Apply default architecture patch
 case "$SHED_HWCONFIG" in
     orangepi-one|orangepi-pc)
-        patch -Np1 -i "$SHED_PATCHDIR/gcc-5.3.0-h3-cpu-default.patch"
+        patch -Np1 -i "$SHED_PATCHDIR/gcc-7.2.0-h3-cpu-default.patch"
+        ;;
+    aml-s905x-cc)
+        patch -Np1 -i "$SHED_PATCHDIR/gcc-7.2.0-s905x-cpu-default.patch"
         ;;
     *)
         echo "Unsupported config: $SHED_HWCONFIG"
@@ -13,9 +16,9 @@ if [ "$SHED_BUILDMODE" == 'toolchain' ]; then
     # Build the required GMP, MPFR and MPC packages
     # HACK: Until shedmake supports multiple source files, this will
     #       have to be done at build time.
-    { wget http://www.mpfr.org/mpfr-3.1.6/mpfr-3.1.6.tar.xz && \
-      tar -xf mpfr-3.1.6.tar.xz && \
-      mv -v mpfr-3.1.6 mpfr; } || exit 1
+    { wget http://www.mpfr.org/mpfr-4.0.0/mpfr-4.0.0.tar.xz && \
+      tar -xf mpfr-4.0.0.tar.xz && \
+      mv -v mpfr-4.0.0 mpfr; } || exit 1
     { wget http://ftp.gnu.org/gnu/gmp/gmp-6.1.2.tar.xz && \
       tar -xf gmp-6.1.2.tar.xz && \
       mv -v gmp-6.1.2 gmp; } || exit 1
@@ -110,6 +113,6 @@ case "$SHED_BUILDMODE" in
         install -v -dm755 "${SHED_FAKEROOT}/usr/lib/bfd-plugins"
         ln -sfv ../../libexec/gcc/$(gcc -dumpmachine)/7.2.0/liblto_plugin.so "${SHED_FAKEROOT}/usr/lib/bfd-plugins/"
         mkdir -pv "${SHED_FAKEROOT}/usr/share/gdb/auto-load/usr/lib"
-        mv -v ${SHED_FAKEROOT}/usr/lib/*gdb.py "${SHED_FAKEROOT}/usr/share/gdb/auto-load/usr/lib"
+        mv -v "${SHED_FAKEROOT}/usr/lib"/*gdb.py "${SHED_FAKEROOT}/usr/share/gdb/auto-load/usr/lib"
         ;;
 esac
