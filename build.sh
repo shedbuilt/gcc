@@ -3,13 +3,11 @@
 case "$SHED_HWCONFIG" in
     orangepi-one|orangepi-pc)
         patch -Np1 -i "$SHED_PATCHDIR/gcc-7.2.0-h3-cpu-default.patch"
-        SHEDPKG_GCC_CONFIG_HEADER='gcc/config/arm/linux-eabi.h'
         # Prevent swapping on devices with < 2GB of RAM
         SHEDPKG_NUMJOBS='1'
         ;;
     aml-s905x-cc)
         patch -Np1 -i "$SHED_PATCHDIR/gcc-7.2.0-s905x-cpu-default.patch"
-        SHEDPKG_GCC_CONFIG_HEADER='gcc/config/aarch64/aarch64-linux.h'
         SHEDPKG_NUMJOBS="$SHED_NUMJOBS"
         ;;
     *)
@@ -17,6 +15,16 @@ case "$SHED_HWCONFIG" in
         exit 1
         ;;
 esac
+
+# Ensure 64-bit libraries are install in /lib
+if [[ $SHED_TOOLCHAIN_TARGET =~ ^aarch64-.* ]]; then
+    sed -i '/mabi.lp64=/s/lib64/lib/' gcc/config/aarch64/t-aarch64-linux || exit 1
+    SHEDPKG_GCC_CONFIG_HEADER='gcc/config/aarch64/aarch64-linux.h'
+else
+    SHEDPKG_GCC_CONFIG_HEADER='gcc/config/arm/linux-eabi.h'
+fi
+
+# Toolchain build configuration
 if [ "$SHED_BUILDMODE" == 'toolchain' ]; then
     # Build the required GMP, MPFR and MPC packages
     # HACK: Until shedmake supports multiple source files, this will
@@ -36,13 +44,14 @@ if [ "$SHED_BUILDMODE" == 'toolchain' ]; then
         `dirname $(${SHED_TOOLCHAIN_TARGET}-gcc -print-libgcc-file-name)`/include-fixed/limits.h
     fi
     # Modify the config header to look for glibc in our toolchain folder
-    sed -i 's@/lib/ld@/tools&@g' "$SHEDPKG_GCC_CONFIG_HEADER"
+    sed -i 's@/lib/ld@/tools&@g' "$SHEDPKG_GCC_CONFIG_HEADER" || exit 1
     echo '
 #undef STANDARD_STARTFILE_PREFIX_1
 #undef STANDARD_STARTFILE_PREFIX_2
 #define STANDARD_STARTFILE_PREFIX_1 "/tools/lib/"
-#define STANDARD_STARTFILE_PREFIX_2 ""' >> "$SHEDPKG_GCC_CONFIG_HEADER"
+#define STANDARD_STARTFILE_PREFIX_2 ""' >> "$SHEDPKG_GCC_CONFIG_HEADER" 
 fi
+
 mkdir -v build
 cd build
 case "$SHED_BUILDMODE" in
