@@ -120,7 +120,7 @@ case "$SHED_BUILDMODE" in
         ln -sv ../usr/bin/cpp "${SHED_FAKEROOT}/lib"
         ln -sv gcc "${SHED_FAKEROOT}/usr/bin/cc"
         install -v -dm755 "${SHED_FAKEROOT}/usr/lib/bfd-plugins"
-        ln -sfv ../../libexec/gcc/${SHED_NATIVE_TARGET}/7.2.0/liblto_plugin.so "${SHED_FAKEROOT}/usr/lib/bfd-plugins/"
+        ln -sfv ../../libexec/gcc/${SHED_NATIVE_TARGET}/7.3.0/liblto_plugin.so "${SHED_FAKEROOT}/usr/lib/bfd-plugins/"
         mkdir -pv "${SHED_FAKEROOT}/usr/share/gdb/auto-load/usr/lib"
         mv -v "${SHED_FAKEROOT}/usr/lib"/*gdb.py "${SHED_FAKEROOT}/usr/share/gdb/auto-load/usr/lib"
         ;;
