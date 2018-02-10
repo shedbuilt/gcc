@@ -29,9 +29,9 @@ if [ "$SHED_BUILDMODE" == 'toolchain' ]; then
     # Build the required GMP, MPFR and MPC packages
     # HACK: Until shedmake supports multiple source files, this will
     #       have to be done at build time.
-    { wget http://www.mpfr.org/mpfr-4.0.0/mpfr-4.0.0.tar.xz && \
-      tar -xf mpfr-4.0.0.tar.xz && \
-      mv -v mpfr-4.0.0 mpfr; } || exit 1
+    { wget http://www.mpfr.org/mpfr-4.0.1/mpfr-4.0.1.tar.xz && \
+      tar -xf mpfr-4.0.1.tar.xz && \
+      mv -v mpfr-4.0.1 mpfr; } || exit 1
     { wget http://ftp.gnu.org/gnu/gmp/gmp-6.1.2.tar.xz && \
       tar -xf gmp-6.1.2.tar.xz && \
       mv -v gmp-6.1.2 gmp; } || exit 1
