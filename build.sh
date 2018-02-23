@@ -1,6 +1,6 @@
 #!/bin/bash
 # Apply default architecture patch
-case "$SHED_HWCONFIG" in
+case "$SHED_DEVICE" in
     orangepi-one|orangepi-pc)
         patch -Np1 -i "$SHED_PATCHDIR/gcc-7.2.0-h3-cpu-default.patch"
         # Prevent swapping on devices with < 2GB of RAM
@@ -11,7 +11,7 @@ case "$SHED_HWCONFIG" in
         SHEDPKG_NUMJOBS="$SHED_NUMJOBS"
         ;;
     *)
-        echo "Unsupported config: $SHED_HWCONFIG"
+        echo "Unsupported config: $SHED_DEVICE"
         exit 1
         ;;
 esac
