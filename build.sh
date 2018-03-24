@@ -1,17 +1,24 @@
 #!/bin/bash
 # Apply default architecture patch
-case "$SHED_DEVICE" in
-    orangepi-one|orangepi-pc)
-        patch -Np1 -i "$SHED_PATCHDIR/gcc-7.2.0-h3-cpu-default.patch"
-        # Prevent swapping on devices with < 2GB of RAM
-        SHEDPKG_NUMJOBS='1'
+case "$SHED_CPU_CORE" in
+    cortex-a7)
+        if [ "$SHED_CPU_FEATURES" == 'neon-vfpv4' ]; then
+            patch -Np1 -i "$SHED_PATCHDIR/gcc-7.3.0-cortex-a7-neon-vfpv4.patch"
+        else
+            echo "Unsupported CPU features: $SHED_CPU_FEATURES"
+            exit 1
+        fi
         ;;
-    aml-s905x-cc)
-        patch -Np1 -i "$SHED_PATCHDIR/gcc-7.2.0-s905x-cpu-default.patch"
-        SHEDPKG_NUMJOBS="$SHED_NUMJOBS"
+    cortex-a53)
+        if [ "$SHED_CPU_FEATURES" == 'crypto' ]; then
+            patch -Np1 -i "$SHED_PATCHDIR/gcc-7.3.0-cortex-a53-crypto.patch"
+        else
+            echo "Unsupported CPU features: $SHED_CPU_FEATURES"
+            exit 1
+        fi
         ;;
     *)
-        echo "Unsupported config: $SHED_DEVICE"
+        echo "Unsupported CPU core: $SHED_CPU_CORE"
         exit 1
         ;;
 esac
@@ -29,14 +36,14 @@ if [ "$SHED_BUILDMODE" == 'toolchain' ]; then
     # Build the required GMP, MPFR and MPC packages
     # HACK: Until shedmake supports multiple source files, this will
     #       have to be done at build time.
-    { wget http://www.mpfr.org/mpfr-4.0.1/mpfr-4.0.1.tar.xz && \
-      tar -xf mpfr-4.0.1.tar.xz && \
+    { wget http://www.mpfr.org/mpfr-4.0.1/mpfr-4.0.1.tar.xz &&
+      tar -xf mpfr-4.0.1.tar.xz &&
       mv -v mpfr-4.0.1 mpfr; } || exit 1
-    { wget http://ftp.gnu.org/gnu/gmp/gmp-6.1.2.tar.xz && \
-      tar -xf gmp-6.1.2.tar.xz && \
+    { wget http://ftp.gnu.org/gnu/gmp/gmp-6.1.2.tar.xz &&
+      tar -xf gmp-6.1.2.tar.xz &&
       mv -v gmp-6.1.2 gmp; } || exit 1
-    { wget https://ftp.gnu.org/gnu/mpc/mpc-1.1.0.tar.gz && \
-      tar -xf mpc-1.1.0.tar.gz && \
+    { wget https://ftp.gnu.org/gnu/mpc/mpc-1.1.0.tar.gz &&
+      tar -xf mpc-1.1.0.tar.gz &&
       mv -v mpc-1.1.0 mpc; } || exit 1
 
     if [ "$SHED_HOST" == 'toolchain' ] && [ "$SHED_TARGET" == 'native' ]; then
@@ -106,7 +113,7 @@ case "$SHED_BUILDMODE" in
         ;;
 esac
 
-make -j $SHEDPKG_NUMJOBS && \
+make -j $SHED_NUMJOBS &&
 make DESTDIR="$SHED_FAKEROOT" install || exit 1
 
 case "$SHED_BUILDMODE" in
@@ -116,12 +123,12 @@ case "$SHED_BUILDMODE" in
         fi
         ;;
     *)
-        mkdir -v "${SHED_FAKEROOT}/lib"
-        ln -sv ../usr/bin/cpp "${SHED_FAKEROOT}/lib"
-        ln -sv gcc "${SHED_FAKEROOT}/usr/bin/cc"
-        install -v -dm755 "${SHED_FAKEROOT}/usr/lib/bfd-plugins"
-        ln -sfv ../../libexec/gcc/${SHED_NATIVE_TARGET}/7.3.0/liblto_plugin.so "${SHED_FAKEROOT}/usr/lib/bfd-plugins/"
-        mkdir -pv "${SHED_FAKEROOT}/usr/share/gdb/auto-load/usr/lib"
+        mkdir -v "${SHED_FAKEROOT}/lib" &&
+        ln -sv ../usr/bin/cpp "${SHED_FAKEROOT}/lib" &&
+        ln -sv gcc "${SHED_FAKEROOT}/usr/bin/cc" &&
+        install -v -dm755 "${SHED_FAKEROOT}/usr/lib/bfd-plugins" &&
+        ln -sfv ../../libexec/gcc/${SHED_NATIVE_TARGET}/7.3.0/liblto_plugin.so "${SHED_FAKEROOT}/usr/lib/bfd-plugins/" &&
+        mkdir -pv "${SHED_FAKEROOT}/usr/share/gdb/auto-load/usr/lib" &&
         mv -v "${SHED_FAKEROOT}/usr/lib"/*gdb.py "${SHED_FAKEROOT}/usr/share/gdb/auto-load/usr/lib"
         ;;
 esac
