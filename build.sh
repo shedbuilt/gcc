@@ -3,7 +3,7 @@
 case "$SHED_CPU_CORE" in
     cortex-a7)
         if [ "$SHED_CPU_FEATURES" == 'neon-vfpv4' ]; then
-            patch -Np1 -i "$SHED_PATCHDIR/gcc-7.3.0-cortex-a7-neon-vfpv4.patch"
+            patch -Np1 -i "$SHED_PKG_PATCH_DIR/gcc-7.3.0-cortex-a7-neon-vfpv4.patch"
         else
             echo "Unsupported CPU features: $SHED_CPU_FEATURES"
             exit 1
@@ -11,7 +11,7 @@ case "$SHED_CPU_CORE" in
         ;;
     cortex-a53)
         if [ "$SHED_CPU_FEATURES" == 'crypto' ]; then
-            patch -Np1 -i "$SHED_PATCHDIR/gcc-7.3.0-cortex-a53-crypto.patch"
+            patch -Np1 -i "$SHED_PKG_PATCH_DIR/gcc-7.3.0-cortex-a53-crypto.patch"
         else
             echo "Unsupported CPU features: $SHED_CPU_FEATURES"
             exit 1
@@ -32,7 +32,7 @@ else
 fi
 
 # Toolchain build configuration
-if [ "$SHED_BUILDMODE" == 'toolchain' ]; then
+if [ "$SHED_BUILD_MODE" == 'toolchain' ]; then
     # Build the required GMP, MPFR and MPC packages
     # HACK: Until shedmake supports multiple source files, this will
     #       have to be done at build time.
@@ -46,7 +46,7 @@ if [ "$SHED_BUILDMODE" == 'toolchain' ]; then
       tar -xf mpc-1.1.0.tar.gz &&
       mv -v mpc-1.1.0 mpc; } || exit 1
 
-    if [ "$SHED_HOST" == 'toolchain' ] && [ "$SHED_TARGET" == 'native' ]; then
+    if [ "$SHED_BUILD_HOST" == 'toolchain' ] && [ "$SHED_BUILD_TARGET" == 'native' ]; then
         cat gcc/limitx.h gcc/glimits.h gcc/limity.h > \
         `dirname $(${SHED_TOOLCHAIN_TARGET}-gcc -print-libgcc-file-name)`/include-fixed/limits.h
     fi
@@ -61,9 +61,9 @@ fi
 
 mkdir -v build
 cd build
-case "$SHED_BUILDMODE" in
+case "$SHED_BUILD_MODE" in
     toolchain)
-        if [ "$SHED_HOST" == 'toolchain' ] && [ "$SHED_TARGET" == 'native' ]; then
+        if [ "$SHED_BUILD_HOST" == 'toolchain' ] && [ "$SHED_BUILD_TARGET" == 'native' ]; then
             CC=${SHED_TOOLCHAIN_TARGET}-gcc                                       \
             CXX=${SHED_TOOLCHAIN_TARGET}-g++                                      \
             AR=${SHED_TOOLCHAIN_TARGET}-ar                                        \
@@ -76,11 +76,11 @@ case "$SHED_BUILDMODE" in
                          --disable-multilib                             \
                          --disable-bootstrap                            \
                          --disable-libgomp || exit 1
-        elif [ "$SHED_TARGET" == 'toolchain' ]; then
+        elif [ "$SHED_BUILD_TARGET" == 'toolchain' ]; then
             ../configure --prefix=/tools                                \
                          --target=$SHED_TOOLCHAIN_TARGET                \
                          --with-glibc-version=2.11                      \
-                         --with-sysroot="$SHED_INSTALLROOT"             \
+                         --with-sysroot="$SHED_INSTALL_ROOT"             \
                          --with-newlib                                  \
                          --without-headers                              \
                          --with-local-prefix=/tools                     \
@@ -113,22 +113,22 @@ case "$SHED_BUILDMODE" in
         ;;
 esac
 
-make -j $SHED_NUMJOBS &&
-make DESTDIR="$SHED_FAKEROOT" install || exit 1
+make -j $SHED_NUM_JOBS &&
+make DESTDIR="$SHED_FAKE_ROOT" install || exit 1
 
-case "$SHED_BUILDMODE" in
+case "$SHED_BUILD_MODE" in
     toolchain)
-        if [ "$SHED_HOST" == 'toolchain' ] && [ "$SHED_TARGET" == 'native' ]; then
-            ln -sv gcc "${SHED_FAKEROOT}/tools/bin/cc"
+        if [ "$SHED_BUILD_HOST" == 'toolchain' ] && [ "$SHED_BUILD_TARGET" == 'native' ]; then
+            ln -sv gcc "${SHED_FAKE_ROOT}/tools/bin/cc"
         fi
         ;;
     *)
-        mkdir -v "${SHED_FAKEROOT}/lib" &&
-        ln -sv ../usr/bin/cpp "${SHED_FAKEROOT}/lib" &&
-        ln -sv gcc "${SHED_FAKEROOT}/usr/bin/cc" &&
-        install -v -dm755 "${SHED_FAKEROOT}/usr/lib/bfd-plugins" &&
-        ln -sfv ../../libexec/gcc/${SHED_NATIVE_TARGET}/7.3.0/liblto_plugin.so "${SHED_FAKEROOT}/usr/lib/bfd-plugins/" &&
-        mkdir -pv "${SHED_FAKEROOT}/usr/share/gdb/auto-load/usr/lib" &&
-        mv -v "${SHED_FAKEROOT}/usr/lib"/*gdb.py "${SHED_FAKEROOT}/usr/share/gdb/auto-load/usr/lib"
+        mkdir -v "${SHED_FAKE_ROOT}/lib" &&
+        ln -sv ../usr/bin/cpp "${SHED_FAKE_ROOT}/lib" &&
+        ln -sv gcc "${SHED_FAKE_ROOT}/usr/bin/cc" &&
+        install -v -dm755 "${SHED_FAKE_ROOT}/usr/lib/bfd-plugins" &&
+        ln -sfv ../../libexec/gcc/${SHED_NATIVE_TARGET}/7.3.0/liblto_plugin.so "${SHED_FAKE_ROOT}/usr/lib/bfd-plugins/" &&
+        mkdir -pv "${SHED_FAKE_ROOT}/usr/share/gdb/auto-load/usr/lib" &&
+        mv -v "${SHED_FAKE_ROOT}/usr/lib"/*gdb.py "${SHED_FAKE_ROOT}/usr/share/gdb/auto-load/usr/lib"
         ;;
 esac
