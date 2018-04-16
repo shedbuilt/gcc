@@ -127,7 +127,7 @@ case "$SHED_BUILD_MODE" in
         ln -sv ../usr/bin/cpp "${SHED_FAKE_ROOT}/lib" &&
         ln -sv gcc "${SHED_FAKE_ROOT}/usr/bin/cc" &&
         install -v -dm755 "${SHED_FAKE_ROOT}/usr/lib/bfd-plugins" &&
-        ln -sfv ../../libexec/gcc/${SHED_NATIVE_TARGET}/7.3.0/liblto_plugin.so "${SHED_FAKE_ROOT}/usr/lib/bfd-plugins/" &&
+        ln -sfv ../../libexec/gcc/${SHED_NATIVE_TARGET}/${SHED_PKG_VERSION}/liblto_plugin.so "${SHED_FAKE_ROOT}/usr/lib/bfd-plugins/" &&
         mkdir -pv "${SHED_FAKE_ROOT}/usr/share/gdb/auto-load/usr/lib" &&
         mv -v "${SHED_FAKE_ROOT}/usr/lib"/*gdb.py "${SHED_FAKE_ROOT}/usr/share/gdb/auto-load/usr/lib"
         ;;
