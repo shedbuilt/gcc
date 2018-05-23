@@ -1,7 +1,9 @@
 NAME=gcc
-VERSION=7.3.0
+VERSION=8.1.0
 REVISION=1
-SRC=https://mirrors.kernel.org/gnu/gcc/gcc-7.3.0/gcc-7.3.0.tar.xz
-SRCMD5=be2da21680f27624f3a87055c4ba5af2
+SRC=http://ftp.gnu.org/gnu/gcc/gcc-8.1.0/gcc-8.1.0.tar.xz
+SRCMD5=65f7c65818dc540b3437605026d329fc
 BUILDDEPS=binutils gmp mpfr mpc
 INSTALLDEPS=binutils gmp mpfr mpc
+OPTIONS=toolchain|bootstrap|release
+DEFAULTS=release

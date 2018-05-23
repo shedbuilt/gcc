@@ -1,4 +1,5 @@
 #!/bin/bash
+declare -A SHED_PKG_LOCAL_OPTIONS=${SHED_PKG_OPTIONS_ASSOC}
 # Apply default architecture patch
 case "$SHED_CPU_CORE" in
     cortex-a7)
@@ -23,8 +24,8 @@ case "$SHED_CPU_CORE" in
         ;;
 esac
 
-# Ensure 64-bit libraries are install in /lib
-if [[ $SHED_TOOLCHAIN_TARGET =~ ^aarch64-.* ]]; then
+# Ensure 64-bit libraries are installed in /lib
+if [[ $SHED_BUILD_TARGET =~ ^aarch64-.* ]]; then
     sed -i '/mabi.lp64=/s/lib64/lib/' gcc/config/aarch64/t-aarch64-linux || exit 1
     SHEDPKG_GCC_CONFIG_HEADER='gcc/config/aarch64/aarch64-linux.h'
 else
@@ -32,7 +33,7 @@ else
 fi
 
 # Toolchain build configuration
-if [ "$SHED_BUILD_MODE" == 'toolchain' ]; then
+if [ -n "${SHED_PKG_LOCAL_OPTIONS[toolchain]}" ]; then
     # Build the required GMP, MPFR and MPC packages
     # HACK: Until shedmake supports multiple source files, this will
     #       have to be done at build time.
@@ -46,9 +47,9 @@ if [ "$SHED_BUILD_MODE" == 'toolchain' ]; then
       tar -xf mpc-1.1.0.tar.gz &&
       mv -v mpc-1.1.0 mpc; } || exit 1
 
-    if [ "$SHED_BUILD_HOST" == 'toolchain' ] && [ "$SHED_BUILD_TARGET" == 'native' ]; then
+    if [ "$SHED_BUILD_HOST" != "$SHED_NATIVE_TARGET" ] && [ "$SHED_BUILD_TARGET" == "$SHED_NATIVE_TARGET" ]; then
         cat gcc/limitx.h gcc/glimits.h gcc/limity.h > \
-        `dirname $(${SHED_TOOLCHAIN_TARGET}-gcc -print-libgcc-file-name)`/include-fixed/limits.h
+        `dirname $(${SHED_BUILD_HOST}-gcc -print-libgcc-file-name)`/include-fixed/limits.h
     fi
     # Modify the config header to look for glibc in our toolchain folder
     sed -i 's@/lib/ld@/tools&@g' "$SHEDPKG_GCC_CONFIG_HEADER" || exit 1
@@ -56,79 +57,76 @@ if [ "$SHED_BUILD_MODE" == 'toolchain' ]; then
 #undef STANDARD_STARTFILE_PREFIX_1
 #undef STANDARD_STARTFILE_PREFIX_2
 #define STANDARD_STARTFILE_PREFIX_1 "/tools/lib/"
-#define STANDARD_STARTFILE_PREFIX_2 ""' >> "$SHEDPKG_GCC_CONFIG_HEADER" 
+#define STANDARD_STARTFILE_PREFIX_2 ""' >> "$SHEDPKG_GCC_CONFIG_HEADER"
 fi
 
+# Configure
 mkdir -v build
 cd build
-case "$SHED_BUILD_MODE" in
-    toolchain)
-        if [ "$SHED_BUILD_HOST" == 'toolchain' ] && [ "$SHED_BUILD_TARGET" == 'native' ]; then
-            CC=${SHED_TOOLCHAIN_TARGET}-gcc                                       \
-            CXX=${SHED_TOOLCHAIN_TARGET}-g++                                      \
-            AR=${SHED_TOOLCHAIN_TARGET}-ar                                        \
-            RANLIB=${SHED_TOOLCHAIN_TARGET}-ranlib                                \
-            ../configure --prefix=/tools                                \
-                         --with-local-prefix=/tools                     \
-                         --with-native-system-header-dir=/tools/include \
-                         --enable-languages=c,c++                       \
-                         --disable-libstdcxx-pch                        \
-                         --disable-multilib                             \
-                         --disable-bootstrap                            \
-                         --disable-libgomp || exit 1
-        elif [ "$SHED_BUILD_TARGET" == 'toolchain' ]; then
-            ../configure --prefix=/tools                                \
-                         --target=$SHED_TOOLCHAIN_TARGET                \
-                         --with-glibc-version=2.11                      \
-                         --with-sysroot="$SHED_INSTALL_ROOT"             \
-                         --with-newlib                                  \
-                         --without-headers                              \
-                         --with-local-prefix=/tools                     \
-                         --with-native-system-header-dir=/tools/include \
-                         --disable-nls                                  \
-                         --disable-shared                               \
-                         --disable-multilib                             \
-                         --disable-decimal-float                        \
-                         --disable-threads                              \
-                         --disable-libatomic                            \
-                         --disable-libgomp                              \
-                         --disable-libmpx                               \
-                         --disable-libquadmath                          \
-                         --disable-libssp                               \
-                         --disable-libvtv                               \
-                         --disable-libstdcxx                            \
-                         --enable-languages=c,c++ || exit 1
-        else
-            echo "Unsupported build options for toolchain."
-            exit 1
-        fi
-        ;;
-    *)
-        SED=sed                               \
-        ../configure --prefix=/usr            \
-                     --enable-languages=c,c++ \
-                     --disable-multilib       \
-                     --disable-bootstrap      \
-                     --with-system-zlib || exit 1
-        ;;
-esac
+if [ -n "${SHED_PKG_LOCAL_OPTIONS[toolchain]}" ]; then
+    if [ "$SHED_BUILD_HOST" != "$SHED_NATIVE_TARGET" ] && [ "$SHED_BUILD_TARGET" == "$SHED_NATIVE_TARGET" ]; then
+        CC=${SHED_BUILD_HOST}-gcc                                       \
+        CXX=${SHED_BUILD_HOST}-g++                                      \
+        AR=${SHED_BUILD_HOST}-ar                                        \
+        RANLIB=${SHED_BUILD_HOST}-ranlib                                \
+        ../configure --prefix=/tools                                \
+                     --with-local-prefix=/tools                     \
+                     --with-native-system-header-dir=/tools/include \
+                     --enable-languages=c,c++                       \
+                     --disable-libstdcxx-pch                        \
+                     --disable-multilib                             \
+                     --disable-bootstrap                            \
+                     --disable-libgomp || exit 1
+    elif [ "$SHED_BUILD_TARGET" != "$SHED_NATIVE_TARGET" ]; then
+        ../configure --prefix=/tools                                \
+                     --target=$SHED_BUILD_TARGET                    \
+                     --with-glibc-version=2.11                      \
+                     --with-sysroot="$SHED_INSTALL_ROOT"            \
+                     --with-newlib                                  \
+                     --without-headers                              \
+                     --with-local-prefix=/tools                     \
+                     --with-native-system-header-dir=/tools/include \
+                     --disable-nls                                  \
+                     --disable-shared                               \
+                     --disable-multilib                             \
+                     --disable-decimal-float                        \
+                     --disable-threads                              \
+                     --disable-libatomic                            \
+                     --disable-libgomp                              \
+                     --disable-libmpx                               \
+                     --disable-libquadmath                          \
+                     --disable-libssp                               \
+                     --disable-libvtv                               \
+                     --disable-libstdcxx                            \
+                     --enable-languages=c,c++ || exit 1
+    else
+        echo "Unsupported host and/or target for toolchain build"
+        exit 1
+    fi
+else
+    SED=sed                               \
+    ../configure --prefix=/usr            \
+                 --enable-languages=c,c++ \
+                 --disable-multilib       \
+                 --disable-bootstrap      \
+                 --with-system-zlib || exit 1
+fi
 
+# Build and Install
 make -j $SHED_NUM_JOBS &&
 make DESTDIR="$SHED_FAKE_ROOT" install || exit 1
 
-case "$SHED_BUILD_MODE" in
-    toolchain)
-        if [ "$SHED_BUILD_HOST" == 'toolchain' ] && [ "$SHED_BUILD_TARGET" == 'native' ]; then
-            ln -sv gcc "${SHED_FAKE_ROOT}/tools/bin/cc"
-        fi
-        ;;
-    *)
-        mkdir -v "${SHED_FAKE_ROOT}/lib" &&
-        ln -sv ../usr/bin/cpp "${SHED_FAKE_ROOT}/lib" &&
-        ln -sv gcc "${SHED_FAKE_ROOT}/usr/bin/cc" &&
-        install -v -dm755 "${SHED_FAKE_ROOT}/usr/lib/bfd-plugins" &&
-        ln -sfv ../../libexec/gcc/${SHED_NATIVE_TARGET}/${SHED_PKG_VERSION}/liblto_plugin.so "${SHED_FAKE_ROOT}/usr/lib/bfd-plugins/" &&
-        mkdir -pv "${SHED_FAKE_ROOT}/usr/share/gdb/auto-load/usr/lib" &&
-        mv -v "${SHED_FAKE_ROOT}/usr/lib"/*gdb.py "${SHED_FAKE_ROOT}/usr/share/gdb/auto-load/usr/lib"
-        ;;
-esac
+# Rearrange
+if [ -n "${SHED_PKG_LOCAL_OPTIONS[toolchain]}" ]; then
+    if [ "$SHED_BUILD_HOST" != "$SHED_NATIVE_TARGET" ] && [ "$SHED_BUILD_TARGET" == "$SHED_NATIVE_TARGET" ]; then
+        ln -sv gcc "${SHED_FAKE_ROOT}/tools/bin/cc"
+    fi
+else
+    mkdir -v "${SHED_FAKE_ROOT}/lib" &&
+    ln -sv ../usr/bin/cpp "${SHED_FAKE_ROOT}/lib" &&
+    ln -sv gcc "${SHED_FAKE_ROOT}/usr/bin/cc" &&
+    install -v -dm755 "${SHED_FAKE_ROOT}/usr/lib/bfd-plugins" &&
+    ln -sfv ../../libexec/gcc/${SHED_BUILD_TARGET}/${SHED_PKG_VERSION}/liblto_plugin.so "${SHED_FAKE_ROOT}/usr/lib/bfd-plugins/" &&
+    mkdir -pv "${SHED_FAKE_ROOT}/usr/share/gdb/auto-load/usr/lib" &&
+    mv -v "${SHED_FAKE_ROOT}/usr/lib"/*gdb.py "${SHED_FAKE_ROOT}/usr/share/gdb/auto-load/usr/lib"
+fi
