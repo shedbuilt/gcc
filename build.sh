@@ -4,7 +4,7 @@ declare -A SHED_PKG_LOCAL_OPTIONS=${SHED_PKG_OPTIONS_ASSOC}
 case "$SHED_CPU_CORE" in
     cortex-a7)
         if [ "$SHED_CPU_FEATURES" == 'neon-vfpv4' ]; then
-            patch -Np1 -i "${SHED_PKG_PATCH_DIR}/gcc-7.3.0-cortex-a7-neon-vfpv4.patch"
+            patch -Np1 -i "${SHED_PKG_PATCH_DIR}/gcc-7.3.0-cortex-a7-neon-vfpv4.patch" || exit 1
         else
             echo "Unsupported CPU features: $SHED_CPU_FEATURES"
             exit 1
@@ -12,7 +12,7 @@ case "$SHED_CPU_CORE" in
         ;;
     cortex-a53)
         if [ "$SHED_CPU_FEATURES" == 'crypto' ]; then
-            patch -Np1 -i "${SHED_PKG_PATCH_DIR}/gcc-7.3.0-cortex-a53-crypto.patch"
+            patch -Np1 -i "${SHED_PKG_PATCH_DIR}/gcc-7.3.0-cortex-a53-crypto.patch" || exit 1
         else
             echo "Unsupported CPU features: $SHED_CPU_FEATURES"
             exit 1

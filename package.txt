@@ -1,8 +1,8 @@
 NAME=gcc
-VERSION=8.1.0
-REVISION=1
-SRC=http://ftp.gnu.org/gnu/gcc/gcc-8.1.0/gcc-8.1.0.tar.xz
-SRCMD5=65f7c65818dc540b3437605026d329fc
+VERSION=8.2.0
+REVISION=2
+SRC=http://ftp.gnu.org/gnu/gcc/gcc-8.2.0/gcc-8.2.0.tar.xz
+SRCMD5=4ab282f414676496483b3e1793d07862
 BUILDDEPS=binutils gmp mpfr mpc
 INSTALLDEPS=binutils gmp mpfr mpc
 OPTIONS=toolchain|bootstrap|release
