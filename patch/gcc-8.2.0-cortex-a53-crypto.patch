@@ -1,9 +1,9 @@
---- a/gcc/config.gcc	2018-01-21 09:38:10.686018871 -1000
-+++ b/gcc/config.gcc	2018-01-22 07:23:56.664242589 -1000
-@@ -964,6 +964,7 @@
- 	tm_file="${tm_file} dbxelf.h elfos.h gnu-user.h linux.h glibc-stdint.h"
+--- a/config.gcc	2018-08-13 15:04:55.363343645 -1000
++++ b/config.gcc	2018-08-13 15:06:01.808928374 -1000
+@@ -985,6 +985,7 @@
  	tm_file="${tm_file} aarch64/aarch64-elf.h aarch64/aarch64-linux.h"
  	tmake_file="${tmake_file} aarch64/t-aarch64 aarch64/t-aarch64-linux"
+ 	tm_defines="${tm_defines}  TARGET_DEFAULT_ASYNC_UNWIND_TABLES=1"
 +	with_cpu=${with_cpu:-cortex-a53+crypto}
  	case $target in
  	aarch64_be-*)
