@@ -1,6 +1,6 @@
 NAME=gcc
 VERSION=8.2.0
-REVISION=2
+REVISION=3
 SRC=http://mirrors.kernel.org/gnu/gcc/gcc-8.2.0/gcc-8.2.0.tar.xz
 SRCMD5=4ab282f414676496483b3e1793d07862
 BUILDDEPS=binutils gmp mpfr mpc
